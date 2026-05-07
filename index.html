@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chúc mừng sinh nhật Su 🎂</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lora', serif;
+            background-color: #050505;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        .handwriting {
+            font-family: 'Dancing Script', cursive;
+        }
+
+        /* Lớp phủ mờ cho nội dung thư */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Hiệu ứng mờ dần và trượt lên cho các đoạn văn */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 1s ease-out, transform 1s ease-out;
+        }
+
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hiệu ứng chuyển cảnh màn hình chờ */
+        #intro-screen {
+            transition: opacity 1.5s ease-in-out, visibility 1.5s ease-in-out;
+        }
+
+        .hidden-screen {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        #main-content {
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+
+        #main-content.visible {
+            opacity: 1;
+        }
+
+        /* Nút bấm bắt đầu */
+        .btn-glow {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-glow:hover {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        /* Nền canvas */
+        #star-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Chỉnh thanh cuộn */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-gray-700 selection:text-white">
+
+    <!-- Canvas cho bầu trời sao -->
+    <canvas id="star-canvas"></canvas>
+
+    <!-- Màn hình chờ ban đầu -->
+    <div id="intro-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]">
+        <div class="text-center px-6">
+            <h1 class="handwriting text-5xl md:text-6xl lg:text-7xl text-amber-200 mb-8 tracking-wide font-light drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                Chúc mừng sinh nhật Su 🎂
+            </h1>
+            <p class="text-gray-400 mb-12 text-sm md:text-base italic">chúc my anh sinh nhat vui ve nhaa.</p>
+            <button onclick="openLetter()" class="btn-glow px-8 py-3 rounded-full border border-amber-600/50 text-amber-200 hover:bg-amber-900/30 hover:border-amber-400 hover:text-amber-100 transition-all duration-300 tracking-widest text-sm uppercase">
+                Mở
+            </button>
+        </div>
+    </div>
+
+    <!-- Nội dung bức thư -->
+    <div id="main-content" class="min-h-screen hidden py-20 px-4 sm:px-8 md:px-16 lg:px-24 flex justify-center items-start">
+        <div class="glass-panel w-full max-w-3xl rounded-2xl p-8 sm:p-12 md:p-16 relative">
+            
+            <div class="absolute top-8 right-8 opacity-30 text-amber-200">
+                <!-- Icon bánh sinh nhật -->
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"></path>
+                    <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5-2 4-2 2.5 2 4 2 2 1 2 1"></path>
+                    <path d="M2 21h20"></path>
+                    <path d="M7 8v3"></path>
+                    <path d="M12 8v3"></path>
+                    <path d="M17 8v3"></path>
+                    <path d="M7 4h.01"></path>
+                    <path d="M12 4h.01"></path>
+                    <path d="M17 4h.01"></path>
+                </svg>
+            </div>
+
+            <div class="space-y-12 text-gray-300 leading-relaxed text-base sm:text-lg tracking-wide">
+                
+                <p class="fade-up handwriting text-3xl md:text-4xl text-amber-200">
+                    Gửi My Anh,
+                </p>
+
+                <p class="fade-up">
+                    Chúc mừng sinh nhật nha! Tuổi mới, t mong mày sẽ luôn vui vẻ, hạnh phúc và cười thật nhiều, cố gắng học thật giỏi và thành công theo con đường mà mình đã lựa chọn. Tất cả hạnh phúc đều là của bà.
+                </p>
+
+                <p class="fade-up">
+                    Đây là một chút nhắn nhủ thật lòng nhất từ bản thân tui muốn nói. T tự thấy mình cũng chẳng bản lĩnh gì đâu hhh, đợi đến tận lúc này mới nói ra thì có hơi trễ, nhưng thật sự tao luôn muốn được ở bên cạnh, thương mày và chăm lo cho mày từng li từng tí.
+                </p>
+
+                <p class="fade-up">
+                    Với t, được nuông chiều m là hạnh phúc, thậm chí những lúc bị mày la, tao cũng thấy vui nữa:)). Được lo lắng, chăm sóc và nhìn m vui cười, t thấy vui. Càng nhìn mày như vậy, tao lại càng thương mày nhiều hơn. T thật sự rất muốn có một danh phận cho m, được đường đường chính chính ở bên cạnh.
+                </p>
+
+                <p class="fade-up">
+                    Thế nhưng, t sợ. T sợ nói ra rồi m sẽ buồn, sợ sự thiếu bản lĩnh của t làm mày khó xử. T không muốn m phải chịu bất cứ ảnh hưởng tiêu cực nào từ t cả. T sợ cái xã hội thị phi này, sợ lời ra tiếng vào của bạn bè, và quan trọng nhất là t thấy bản thân mình hiện tại vẫn chưa có gì trong tay để làm chỗ dựa vững chắc nhất cho m. <span class="text-white font-medium">Với tao, khoảng thời gian qua được mày cho phép ở bên cạnh như thế này đã là quá đủ rồi.</span>
+                </p>
+
+                <p class="fade-up">
+                    Có đôi lúc t trốn tránh, cũng vì t biết m đang có những điều mà m muốn giữ lại, muốn ở lại. Ở bên cạnh m, t luôn tự nhắc bản thân không được phép làm điều gì sai trái, dù điều đó khó khăn với t lắm. T biết nói ra nghe giống như một lốp kkk, t biết điều đó không hay ho gì nên lúc nào cũng giữ mình trong khuôn khổ.
+                </p>
+
+                <p class="fade-up">
+                    Nhưng dù thế nào đi nữa, t cũng thương mày, và chưa bao giờ tao hối hận. Điều đó đối với t chưa bao giờ là sai lầm, cũng chẳng phải là điều gì lãng phí. Ngược lại, chính vì thương m mà t biết thế nào là muốn cố gắng vì một người, biết thế nào là niềm vui khi thấy một người hạnh phúc. Nếu thời gian có quay trở lại, t vẫn sẽ chọn thương m, chọn ở bên cạnh nghe mày la t, chọn nuông chiều mày như cách t đã và đg làm.
+                </p>
+
+                <p class="fade-up">
+                    Khoảng thời gian sắp tới, cả t và m đều sẽ đối mặt với một bước ngoặt siêu lớn. T cũng lo sợ lắm, sợ t m xa nhau. Vì tương lai, t muốn m hãy cứ lựa chọn theo những gì mày muốn, kể cả việc m muốn ở bên cạnh ai hay yêu thương ai. <span class="text-white font-medium">Chỉ cần mày hứa với t sự lựa chọn đó phải đúng đắn và khiến m thực sự hạnh phúc là được.</span>
+                </p>
+
+                <p class="fade-up">
+                    T ước mày luôn được hạnh phúc chẳng phải bận lòng vì những muộn phiền, không phải nghe bất kỳ sự gắt gỏng nào từ ai đó, và tao ước mày sẽ chẳng bao giờ phải chịu đựng thêm một tổn thương nào.
+                </p>
+
+                <p class="fade-up">
+                    T viết lâu rồi mà chưa có dịp show ra có dám đâu nhát lắm, tới giờ có dịp tự nhiên nhớ lại còn có mấy chục ngày nên thôi t lấy ra luôn. Thôi nói chung là Sinh Nhật Hạnh Phúc. <span class="text-amber-200">Cảm ơn vì đã đồng hành và tin tưởng nha.</span>
+                </p>
+
+                <!-- Nút Mở Quà -->
+                <div class="fade-up flex justify-center mt-16 pb-4">
+                    <button onclick="openGift()" class="btn-glow px-8 py-3 rounded-full bg-amber-600/20 border border-amber-500/50 text-amber-200 hover:bg-amber-500/40 hover:text-white transition-all duration-300 font-medium tracking-wider flex items-center gap-3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                            <rect x="2" y="7" width="20" height="5"></rect>
+                            <line x1="12" y1="22" x2="12" y2="7"></line>
+                            <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                            <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                        </svg>
+                        Mở Quà Nè
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Hộp Quà Ảo -->
+    <div id="gift-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 backdrop-blur-sm opacity-0 transition-opacity duration-500">
+        <div class="glass-panel max-w-md w-full mx-4 p-8 rounded-2xl text-center relative transform scale-95 transition-transform duration-500" id="gift-content">
+            <button onclick="closeGift()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div class="text-7xl mb-6 animate-bounce mt-4">🎁</div>
+            <h2 class="handwriting text-3xl text-amber-300 mb-4">Một hộp quà!</h2>
+            <p class="text-gray-300 mb-6 leading-relaxed">
+                Tao hết lúa rồi mốt tính nha hahaha
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Hiệu ứng mở thư
+        function openLetter() {
+            const intro = document.getElementById('intro-screen');
+            const main = document.getElementById('main-content');
+            
+            // Ẩn màn hình intro
+            intro.classList.add('hidden-screen');
+            
+            setTimeout(() => {
+                intro.style.display = 'none';
+                main.classList.remove('hidden');
+                // Chút delay để DOM cập nhật trước khi thêm class visible tạo hiệu ứng fade-in
+                setTimeout(() => {
+                    main.classList.add('visible');
+                    initObserver(); // Khởi động hiệu ứng cuộn trang
+                }, 50);
+            }, 1500); // Đợi CSS transition kết thúc
+        }
+
+        // Logic hiệu ứng hiện dần khi cuộn trang
+        function initObserver() {
+            const elements = document.querySelectorAll('.fade-up');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // Tùy chọn: Ngừng quan sát sau khi đã hiện
+                        // observer.unobserve(entry.target); 
+                    }
+                });
+            }, {
+                threshold: 0.1, // Hiện khi 10% phần tử xuất hiện trên màn hình
+                rootMargin: "0px 0px -50px 0px"
+            });
+
+            elements.forEach(el => observer.observe(el));
+            
+            // Xử lý các phần tử đầu tiên đã nằm trong viewport ngay từ đầu
+            setTimeout(() => {
+                elements.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if(rect.top < window.innerHeight) {
+                        el.classList.add('visible');
+                    }
+                });
+            }, 500);
+        }
+
+        // Logic vẽ Bầu trời sao (Canvas)
+        const canvas = document.getElementById('star-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let stars = [];
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        function createStars() {
+            stars = [];
+            const numStars = Math.floor((width * height) / 3000); // Mật độ sao
+            for (let i = 0; i < numStars; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 1.5 + 0.1,
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.05 + 0.01,
+                    direction: Math.random() < 0.5 ? 1 : -1
+                });
+            }
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, width, height);
+            
+            for (let i = 0; i < stars.length; i++) {
+                const s = stars[i];
+                
+                // Cập nhật độ sáng (nhấp nháy)
+                s.alpha += s.speed * s.direction;
+                if (s.alpha >= 1 || s.alpha <= 0.1) {
+                    s.direction *= -1;
+                }
+
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+                ctx.fill();
+            }
+            
+            requestAnimationFrame(drawStars);
+        }
+
+        // --- Logic Hộp Quà ---
+        function openGift() {
+            const modal = document.getElementById('gift-modal');
+            const content = document.getElementById('gift-content');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Ép trình duyệt vẽ lại (reflow) để animation chạy mượt
+            void modal.offsetWidth; 
+            
+            modal.classList.remove('opacity-0');
+            modal.classList.add('opacity-100');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+        }
+
+        function closeGift() {
+            const modal = document.getElementById('gift-modal');
+            const content = document.getElementById('gift-content');
+            
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }, 500);
+        }
+        // ----------------------
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            createStars();
+        });
+
+        // Khởi tạo nền
+        resizeCanvas();
+        createStars();
+        drawStars();
+    </script>
+</body>
+</html>
