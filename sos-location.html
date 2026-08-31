@@ -1,0 +1,1010 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <meta name="theme-color" content="#0c0716"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>BaeBee - Định Vị &amp; Hỗ Trợ Đón</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800&family=Inter:wght@500;600;700;800&subset=vietnamese,latin&display=swap" rel="stylesheet"/>
+  
+  <link rel="dns-prefetch" href="https://api.telegram.org"/>
+  <link rel="dns-prefetch" href="https://tile.openstreetmap.org"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root {
+      --bg-app: #0c0716;
+      --bg-card: rgba(26, 16, 44, 0.85);
+      --border-card: rgba(255, 255, 255, 0.1);
+      
+      --pink-primary: #ec4899;
+      --pink-glow: rgba(236, 72, 153, 0.35);
+      --purple-primary: #a855f7;
+      --red-sos: #f43f5e;
+      --red-glow: rgba(244, 63, 94, 0.45);
+      --green-safe: #10b981;
+      --cyan-move: #06b6d4;
+      --amber-warn: #f59e0b;
+      
+      --text-1: #ffffff;
+      --text-2: rgba(255, 255, 255, 0.75);
+      --text-3: rgba(255, 255, 255, 0.45);
+      
+      --radius-2xl: 20px;
+      --radius-xl: 14px;
+      --radius-lg: 10px;
+      --radius-pill: 9999px;
+      
+      --font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    *, *::before, *::after, button, input, textarea, select {
+      margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      font-family: var(--font-family) !important;
+    }
+
+    body {
+      background-color: var(--bg-app);
+      color: var(--text-1);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      position: relative;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .bg-blur { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .blur-orb-1 {
+      position: absolute; width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, var(--pink-primary), transparent 70%);
+      top: -80px; left: -60px; filter: blur(80px); opacity: 0.25;
+    }
+    .blur-orb-2 {
+      position: absolute; width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, var(--purple-primary), transparent 70%);
+      bottom: -60px; right: -60px; filter: blur(80px); opacity: 0.2;
+    }
+
+    .app-container {
+      position: relative; z-index: 1; width: 100%; max-width: 420px;
+      padding: 16px 16px 36px; display: flex; flex-direction: column; gap: 14px;
+    }
+
+    .header-bar { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; }
+    .app-branding { display: flex; align-items: center; gap: 10px; }
+    .brand-badge {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--pink-primary), var(--purple-primary));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 1rem; font-weight: 800; box-shadow: 0 4px 14px var(--pink-glow);
+    }
+    .brand-meta h1 { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.3px; line-height: 1.1; color: #fff; }
+    .brand-meta p { font-size: 0.68rem; color: var(--text-2); font-weight: 500; }
+    
+    .status-live-chip {
+      background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #a7f3d0; padding: 5px 10px; border-radius: var(--radius-pill);
+      font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; gap: 6px;
+    }
+    .status-live-chip.sending-mode {
+      background: rgba(244, 63, 94, 0.2); border-color: rgba(244, 63, 94, 0.5);
+      color: #fecdd3; animation: pulseChip 1.2s infinite;
+    }
+    @keyframes pulseChip { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-safe); box-shadow: 0 0 8px var(--green-safe); }
+    .live-dot.dot-sos { background: var(--red-sos); box-shadow: 0 0 8px var(--red-sos); }
+
+    .map-card-wrap {
+      background: var(--bg-card); border: 1px solid var(--border-card);
+      border-radius: var(--radius-2xl); overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35); backdrop-filter: blur(20px);
+    }
+    .map-inner-rel { position: relative; }
+    #liveMap { width: 100%; height: 210px; background: #120920; z-index: 1; }
+    .leaflet-tile-pane { filter: brightness(0.85) contrast(1.15) hue-rotate(245deg) saturate(1.1); }
+    .leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
+
+    .map-floating-btn {
+      position: absolute; top: 10px; right: 10px; z-index: 999;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(14, 8, 24, 0.9); border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(12px); color: #fff; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: transform 0.2s;
+    }
+    .map-floating-btn svg { width: 16px; height: 16px; stroke-width: 2.2; }
+    .map-floating-btn:active { transform: scale(0.9); }
+
+    .radar-pulse-pin {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--pink-primary); border: 3px solid #fff;
+      box-shadow: 0 0 16px var(--pink-glow); position: relative;
+    }
+    .radar-pulse-pin::after {
+      content: ''; position: absolute; inset: -10px; border-radius: 50%;
+      background: rgba(236, 72, 153, 0.25); animation: pinScan 2.2s ease-out infinite; z-index: -1;
+    }
+    @keyframes pinScan { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2.2); opacity: 0; } }
+
+    .address-info-panel {
+      padding: 12px 14px;
+      background: linear-gradient(180deg, rgba(22, 13, 38, 0.95), rgba(15, 8, 26, 0.98));
+      border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; flex-direction: column; gap: 3px;
+    }
+    .address-street-text {
+      font-size: 0.84rem; font-weight: 700; color: #fff;
+      display: flex; align-items: center; gap: 6px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .address-street-text svg { width: 14px; height: 14px; stroke: var(--pink-primary); flex-shrink: 0; }
+    .address-sub-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.66rem; color: var(--text-2); }
+    .acc-pill { color: var(--green-safe); font-weight: 600; }
+
+    .action-hero-area { display: flex; flex-direction: column; gap: 10px; }
+
+    /* 1. Hero Pickup Button */
+    .btn-hero-pickup {
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.28), rgba(168, 85, 247, 0.28));
+      border: 1.5px solid rgba(236, 72, 153, 0.55);
+      border-radius: var(--radius-2xl); padding: 16px 18px;
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 8px 25px var(--pink-glow);
+    }
+    .btn-hero-pickup:active { transform: scale(0.97); }
+    .hero-btn-left { display: flex; align-items: center; gap: 14px; }
+    .hero-btn-icon {
+      width: 46px; height: 46px; border-radius: var(--radius-xl);
+      background: linear-gradient(135deg, var(--pink-primary), var(--purple-primary));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; flex-shrink: 0; box-shadow: 0 4px 15px var(--pink-glow);
+    }
+    .hero-btn-icon svg { width: 24px; height: 24px; stroke-width: 2.2; }
+    .hero-btn-text { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+    .hero-btn-title { font-size: 1.15rem; font-weight: 800; color: #ffffff; letter-spacing: -0.2px; }
+    .hero-btn-desc { font-size: 0.72rem; color: var(--text-2); font-weight: 500; }
+    .hero-btn-desc b { color: #fff; }
+    .hero-btn-arrow {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+    .hero-btn-arrow svg { width: 15px; height: 15px; stroke-width: 2.2; }
+
+    /* 2. SOS Emergency Button */
+    .btn-sos-emergency {
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.26), rgba(225, 29, 72, 0.14));
+      border: 1.5px solid rgba(244, 63, 94, 0.55);
+      border-radius: var(--radius-2xl); padding: 14px 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+      transition: all 0.2s ease; box-shadow: 0 6px 20px rgba(244, 63, 94, 0.25);
+      position: relative; overflow: hidden;
+    }
+    .btn-sos-emergency:active { transform: scale(0.97); }
+    .btn-sos-emergency.sending {
+      animation: sosButtonPulse 1.2s infinite alternate;
+      border-color: #fff;
+    }
+    @keyframes sosButtonPulse {
+      0% { box-shadow: 0 0 15px rgba(244, 63, 94, 0.4); background: rgba(244, 63, 94, 0.35); }
+      100% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.85); background: rgba(225, 29, 72, 0.55); }
+    }
+    .sos-left { display: flex; align-items: center; gap: 12px; }
+    .sos-icon-box {
+      width: 40px; height: 40px; border-radius: var(--radius-xl);
+      background: var(--red-sos); display: flex; align-items: center; justify-content: center;
+      color: #fff; flex-shrink: 0; box-shadow: 0 4px 15px var(--red-glow);
+    }
+    .sos-icon-box svg { width: 20px; height: 20px; stroke-width: 2.3; }
+    .sos-title { font-size: 1.02rem; font-weight: 800; color: #ffffff; }
+    .sos-desc { font-size: 0.68rem; color: #fca5a5; }
+
+    /* SOS Active Bar (Multi-send Controller) */
+    .sos-active-panel {
+      display: none;
+      background: linear-gradient(135deg, rgba(225, 29, 72, 0.95), rgba(159, 18, 57, 0.98));
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      border-radius: var(--radius-xl); padding: 12px 14px;
+      align-items: center; justify-content: space-between;
+      box-shadow: 0 8px 30px rgba(244, 63, 94, 0.5);
+      animation: slideInDown 0.3s ease;
+    }
+    .sos-active-panel.active { display: flex; }
+    @keyframes slideInDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+    .sos-panel-left { display: flex; align-items: center; gap: 10px; }
+    .sos-spinner {
+      width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .sos-panel-text h4 { font-size: 0.84rem; font-weight: 800; color: #fff; }
+    .sos-panel-text p { font-size: 0.66rem; color: rgba(255,255,255,0.85); }
+    .btn-stop-sos {
+      background: #ffffff; color: #9f1239; border: none;
+      border-radius: var(--radius-pill); padding: 6px 14px;
+      font-size: 0.72rem; font-weight: 800; cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .btn-stop-sos:active { transform: scale(0.95); }
+
+    /* 3. Secondary 3 Buttons */
+    .secondary-cards-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .sec-card {
+      background: var(--bg-card); border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl); padding: 12px 8px;
+      cursor: pointer; display: flex; flex-direction: column; align-items: center;
+      text-align: center; gap: 6px; transition: all 0.2s;
+    }
+    .sec-card:active { transform: scale(0.95); }
+    .sec-card svg { width: 20px; height: 20px; stroke-width: 2; }
+    .sec-card-title { font-size: 0.78rem; font-weight: 700; color: #fff; }
+    .sec-card-sub { font-size: 0.58rem; color: var(--text-2); }
+    .sec-safe { border-color: rgba(16, 185, 129, 0.3); }
+    .sec-safe svg { stroke: var(--green-safe); }
+    .sec-otw { border-color: rgba(6, 182, 212, 0.3); }
+    .sec-otw svg { stroke: var(--cyan-move); }
+    .sec-here { border-color: rgba(236, 72, 153, 0.3); }
+    .sec-here svg { stroke: var(--pink-primary); }
+
+    .note-preset-box {
+      background: var(--bg-card); border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl); padding: 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .note-input {
+      width: 100%; background: rgba(16, 9, 26, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12); border-radius: var(--radius-lg);
+      padding: 9px 12px; color: #fff; font-size: 0.82rem; outline: none;
+    }
+    .note-input:focus { border-color: var(--pink-primary); }
+    .note-input::placeholder { color: var(--text-3); }
+
+    .preset-chips-row { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+    .preset-chips-row::-webkit-scrollbar { display: none; }
+    .preset-chip {
+      flex-shrink: 0; padding: 5px 10px; border-radius: var(--radius-pill);
+      font-size: 0.68rem; font-weight: 600; background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-2); cursor: pointer; transition: all 0.2s;
+    }
+    .preset-chip:hover, .preset-chip.active {
+      background: rgba(236, 72, 153, 0.2); border-color: var(--pink-primary); color: #fff;
+    }
+
+    .bottom-status-strip {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 8px; font-size: 0.68rem; color: var(--text-2);
+    }
+    .status-left-dot { display: flex; align-items: center; gap: 6px; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 18000;
+      background: rgba(4, 2, 8, 0.75); backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px); display: none; align-items: flex-end; justify-content: center;
+    }
+    .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .modal-drawer {
+      width: 100%; max-width: 420px;
+      background: linear-gradient(180deg, #180d2c, #0e071c);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+      padding: 20px 18px 30px; display: flex; flex-direction: column; gap: 14px;
+      animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .drawer-header { display: flex; justify-content: space-between; align-items: center; }
+    .drawer-title { font-size: 1.05rem; font-weight: 800; color: #fff; }
+    .drawer-close {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08); border: none; color: #fff;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .drawer-close svg { width: 15px; height: 15px; stroke-width: 2.2; }
+
+    .drawer-spots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .spot-btn {
+      background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg); padding: 11px 10px; color: var(--text-1);
+      font-size: 0.78rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: all 0.18s ease;
+    }
+    .spot-btn svg { width: 16px; height: 16px; stroke-width: 2.2; stroke: var(--text-3); }
+    .spot-btn:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(236, 72, 153, 0.3); }
+    .spot-btn.active {
+      background: rgba(236, 72, 153, 0.18); border-color: var(--pink-primary);
+      color: #fff; box-shadow: 0 0 15px var(--pink-glow);
+    }
+    .spot-btn.active svg { stroke: var(--pink-primary); }
+
+    .drawer-time-row { display: flex; align-items: center; gap: 6px; }
+    .drawer-time-label { font-size: 0.7rem; color: var(--text-2); font-weight: 600; }
+    .time-chip-btn {
+      padding: 4px 8px; border-radius: var(--radius-pill); font-size: 0.66rem; font-weight: 600;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-2); cursor: pointer;
+    }
+    .time-chip-btn.active { background: rgba(236, 72, 153, 0.2); border-color: var(--pink-primary); color: #fff; }
+
+    .drawer-send-btn {
+      width: 100%; padding: 14px; border-radius: var(--radius-xl);
+      background: linear-gradient(135deg, var(--pink-primary), var(--purple-primary));
+      border: none; color: #fff; font-size: 0.95rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer; transition: transform 0.2s; box-shadow: 0 6px 20px var(--pink-glow);
+    }
+    .drawer-send-btn:active { transform: scale(0.98); }
+    .drawer-send-btn svg { width: 17px; height: 17px; stroke-width: 2.4; }
+
+    /* Toast Notification with Live Spinner */
+    .toast-msg-box {
+      position: fixed; top: 16px; left: 50%;
+      transform: translateX(-50%) translateY(-160%);
+      z-index: 25000; padding: 11px 20px; border-radius: var(--radius-pill);
+      background: rgba(20, 10, 32, 0.96); border: 1px solid rgba(236, 72, 153, 0.4);
+      backdrop-filter: blur(20px); color: #fff; font-size: 0.8rem; font-weight: 700;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-width: 92vw; pointer-events: none;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toast-msg-box.show { transform: translateX(-50%) translateY(0); }
+    .toast-msg-box.sending { border-color: var(--pink-primary); }
+    .toast-msg-box.error { border-color: var(--red-sos); box-shadow: 0 8px 30px var(--red-glow); }
+    .toast-spinner {
+      width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: var(--pink-primary); border-radius: 50%;
+      animation: spin 0.8s linear infinite; display: none;
+    }
+    .toast-msg-box.sending .toast-spinner { display: inline-block; }
+  </style>
+</head><body>
+  <div class="bg-blur">
+    <div class="blur-orb-1"></div>
+    <div class="blur-orb-2"></div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-msg-box" id="toastBox">
+    <div class="toast-spinner"></div>
+    <span id="toastMsg">Sẵn sàng kết nối</span>
+  </div>
+
+  <!-- Pickup Spot Selector Modal Drawer -->
+  <div class="modal-overlay" id="pickupModalBackdrop">
+    <div class="modal-drawer">
+      <div class="drawer-header">
+        <div class="drawer-title">Chọn Điểm Hẹn Đón</div>
+        <button class="drawer-close" id="btnCloseModal" title="Đóng">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div style="font-size: 0.72rem; color: var(--text-2); background: rgba(255,255,255,0.04); padding: 8px 12px; border-radius: var(--radius-lg); display: flex; align-items: center; gap: 6px;">
+        <svg style="width: 14px; height: 14px; stroke: var(--pink-primary); flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span id="modalAddressText">Đang định vị...</span>
+      </div>
+
+      <div class="drawer-spots-grid" id="modalSpotsGrid">
+        <div class="spot-btn active" data-spot="Ngay tại đây (Tọa độ thực tế)">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06z"/></svg>
+          <span>Ngay tại đây</span>
+        </div>
+        <div class="spot-btn" data-spot="Trước nhà">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          <span>Trước nhà</span>
+        </div>
+        <div class="spot-btn" data-spot="Đầu hẻm">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          <span>Đầu hẻm</span>
+        </div>
+        <div class="spot-btn" data-spot="Cổng chính">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
+          <span>Cổng chính</span>
+        </div>
+        <div class="spot-btn" data-spot="Quán cà phê">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+          <span>Quán cà phê</span>
+        </div>
+        <div class="spot-btn" data-spot="Trạm xe buýt">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h8m-8 4h8m-8 4h8M4 5a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/></svg>
+          <span>Trạm xe buýt</span>
+        </div>
+      </div>
+
+      <div class="drawer-time-row" id="modalTimeOffsets">
+        <span class="drawer-time-label">Hẹn lúc:</span>
+        <button class="time-chip-btn active" data-offset="0">Đón ngay</button>
+        <button class="time-chip-btn" data-offset="15">+15 phút</button>
+        <button class="time-chip-btn" data-offset="30">+30 phút</button>
+        <button class="time-chip-btn" data-offset="45">+45 phút</button>
+      </div>
+
+      <input type="text" class="note-input" id="modalSpecificNote" placeholder="Ghi chú thêm (vd: Đối diện nhà thuốc, mặc áo trắng)..." style="height: 40px;"/>
+
+      <button class="drawer-send-btn" id="btnConfirmSendPickup">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+        <span id="btnDrawerSendText">Gửi Cho Bae Ngay</span>
+      </button>
+    </div>
+  </div>
+
+  <main class="app-container">
+    <!-- Header -->
+    <header class="header-bar">
+      <div class="app-branding">
+        <div class="brand-badge">B</div>
+        <div class="brand-meta">
+          <h1>BaeBee</h1>
+          <p>Hỗ trợ đón &amp; định vị an toàn</p>
+        </div>
+      </div>
+      <div class="status-live-chip" id="topGpsStatusChip">
+        <div class="live-dot" id="topStatusDot"></div>
+        <span id="gpsStateText">GPS LIVE</span>
+      </div>
+    </header>
+
+    <!-- Map View -->
+    <section class="map-card-wrap">
+      <div class="map-inner-rel">
+        <button class="map-floating-btn" id="btnRecenter" title="Về vị trí hiện tại">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06z"/></svg>
+        </button>
+        <div id="liveMap"></div>
+      </div>
+
+      <div class="address-info-panel">
+        <div class="address-street-text">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span id="streetAddress">Đang xác định vị trí...</span>
+        </div>
+        <div class="address-sub-meta">
+          <span id="coordsDisplay">Tọa độ: Đang dò...</span>
+          <span class="acc-pill" id="accDisplay">Độ chính xác: ~--m</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOS Active Multi-Send Bar (Visible when SOS is firing) -->
+    <div class="sos-active-panel" id="sosActivePanel">
+      <div class="sos-panel-left">
+        <div class="sos-spinner"></div>
+        <div class="sos-panel-text">
+          <h4 id="sosProgressTitle">Đang gửi SOS liên tục...</h4>
+          <p id="sosProgressSub">Đợt 1/3 • Bắn tín hiệu vào Telegram</p>
+        </div>
+      </div>
+      <button class="btn-stop-sos" id="btnStopSos">DỪNG SOS</button>
+    </div>
+
+    <!-- Primary Action Hero Buttons -->
+    <section class="action-hero-area">
+      <!-- 1. BIG HERO PICKUP -->
+      <button class="btn-hero-pickup" id="btnOpenPickupModal">
+        <div class="hero-btn-left">
+          <div class="hero-btn-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h8m-8 5h8m-4 5h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+          </div>
+          <div class="hero-btn-text">
+            <span class="hero-btn-title" id="heroPickupTitleText">Rước Tao Với</span>
+            <span class="hero-btn-desc" id="currentChosenSpotDesc">Điểm đón: <b>Ngay tại đây</b> &bull; Bấm để chọn</span>
+          </div>
+        </div>
+        <div class="hero-btn-arrow">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </div>
+      </button>
+
+      <!-- 2. BIG SOS EMERGENCY BUTTON -->
+      <button class="btn-sos-emergency" id="btnSOS">
+        <div class="sos-left">
+          <div class="sos-icon-box" id="sosIconBox">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <div style="text-align: left;">
+            <div class="sos-title" id="sosTitleText">Cứu Tao Gấp (SOS)</div>
+            <div class="sos-desc" id="sosSubText">Gửi cảnh báo dồn dập 3 đợt liên tục</div>
+          </div>
+        </div>
+        <div style="font-size: 0.75rem; color: #fca5a5; font-weight: 700;" id="sosActionText">GỬI NGAY &gt;</div>
+      </button>
+
+      <!-- 3. SECONDARY 3 QUICK STATUSES -->
+      <div class="secondary-cards-row">
+        <button class="sec-card sec-safe" id="btnSafe">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          <span class="sec-card-title">Về Tới Nơi</span>
+          <span class="sec-card-sub">Báo an toàn</span>
+        </button>
+
+        <button class="sec-card sec-otw" id="btnOTW">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span class="sec-card-title">Đang Đi Về</span>
+          <span class="sec-card-sub">Trên đường</span>
+        </button>
+
+        <button class="sec-card sec-here" id="btnHere">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+          <span class="sec-card-title">Ở Đây Nè</span>
+          <span class="sec-card-sub">Ghim tọa độ</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Quick Note & Presets -->
+    <section class="note-preset-box">
+      <input type="text" class="note-input" id="customMsgInput" placeholder="Lời nhắn thêm (nếu có)..."/>
+      <div class="preset-chips-row" id="quickMsgChips">
+        <button class="preset-chip" data-msg="Nhớ rước đúng giờ nhé!">Đúng giờ</button>
+        <button class="preset-chip" data-msg="Đói bụng rồi, nhớ mua đồ ăn qua nha!">Mua đồ ăn</button>
+        <button class="preset-chip" data-msg="Trời đang mưa to, nhớ mang áo mưa nhé!">Mang áo mưa</button>
+        <button class="preset-chip" data-msg="Tới nơi thì nháy máy hoặc gọi nhé!">Nháy máy khi tới</button>
+      </div>
+    </section>
+
+    <!-- Bottom Status -->
+    <div class="bottom-status-strip">
+      <div class="status-left-dot">
+        <div class="live-dot"></div>
+        <span id="systemStatusText">Sẵn sàng gửi tin</span>
+      </div>
+      <div id="batteryLevelText">Pin: --%</div>
+    </div>
+  </main>
+
+<script>
+var BOT_TOKEN = '7255505229:AAF2CvTYH9csQdTRSfVEEPYgtdFeF11wp48';
+var CHAT_ID = '6369371709';
+
+var audioCtx = null;
+function playSound(type) {
+  try {
+    if (!audioCtx) {
+      var AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) audioCtx = new AudioContext();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    if (!audioCtx) return;
+    var now = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    if (type === 'sos') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(850, now);
+      osc.frequency.linearRampToValueAtTime(1300, now + 0.2);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(now); osc.stop(now + 0.25);
+    } else if (type === 'success') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(now); osc.stop(now + 0.25);
+    } else {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, now);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(now); osc.stop(now + 0.05);
+    }
+  } catch(e) {}
+}
+
+var liveMapEl = document.getElementById('liveMap');
+var gpsStateText = document.getElementById('gpsStateText');
+var streetAddress = document.getElementById('streetAddress');
+var coordsDisplay = document.getElementById('coordsDisplay');
+var accDisplay = document.getElementById('accDisplay');
+var toastBox = document.getElementById('toastBox');
+var toastMsg = document.getElementById('toastMsg');
+var systemStatusText = document.getElementById('systemStatusText');
+var batteryLevelText = document.getElementById('batteryLevelText');
+var customMsgInput = document.getElementById('customMsgInput');
+
+var pickupModalBackdrop = document.getElementById('pickupModalBackdrop');
+var modalAddressText = document.getElementById('modalAddressText');
+var modalSpecificNote = document.getElementById('modalSpecificNote');
+var currentChosenSpotDesc = document.getElementById('currentChosenSpotDesc');
+var btnOpenPickupModal = document.getElementById('btnOpenPickupModal');
+
+var btnSOS = document.getElementById('btnSOS');
+var sosTitleText = document.getElementById('sosTitleText');
+var sosSubText = document.getElementById('sosSubText');
+var sosActionText = document.getElementById('sosActionText');
+var sosActivePanel = document.getElementById('sosActivePanel');
+var sosProgressTitle = document.getElementById('sosProgressTitle');
+var sosProgressSub = document.getElementById('sosProgressSub');
+var btnStopSos = document.getElementById('btnStopSos');
+var topGpsStatusChip = document.getElementById('topGpsStatusChip');
+var topStatusDot = document.getElementById('topStatusDot');
+
+var curLat = 10.8231, curLng = 106.6297, curAcc = null;
+var currentAddress = "Đang định vị...";
+var selectedPickupSpot = "Ngay tại đây";
+var selectedTimeOffset = 0;
+var toastTimer = null;
+var isSosRunning = false;
+var sosTimeouts = [];
+
+if (navigator.getBattery) {
+  navigator.getBattery().then(function(battery) {
+    function updateBat() {
+      var level = Math.round(battery.level * 100);
+      batteryLevelText.textContent = 'Pin: ' + level + '%' + (battery.charging ? ' (Đang sạc)' : '');
+    }
+    updateBat();
+    battery.addEventListener('levelchange', updateBat);
+    battery.addEventListener('chargingchange', updateBat);
+  });
+}
+
+var map = L.map('liveMap', { zoomControl: false, attributionControl: false }).setView([curLat, curLng], 15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+var customMarkerIcon = L.divIcon({
+  className: '',
+  html: '<div class="radar-pulse-pin"></div>',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10]
+});
+
+var mapMarker = L.marker([curLat, curLng], { icon: customMarkerIcon }).addTo(map);
+var mapCircle = L.circle([curLat, curLng], {
+  radius: 30,
+  color: '#ec4899',
+  fillColor: 'rgba(236, 72, 153, 0.18)',
+  fillOpacity: 0.5,
+  weight: 1.5,
+  dashArray: '5,5'
+}).addTo(map);
+
+function renderLocation(lat, lng, acc) {
+  curLat = lat; curLng = lng; curAcc = acc;
+  var pos = L.latLng(lat, lng);
+  mapMarker.setLatLng(pos);
+  mapCircle.setLatLng(pos);
+  if (acc) mapCircle.setRadius(acc);
+  
+  coordsDisplay.textContent = 'Tọa độ: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+  if (acc) {
+    if (acc <= 15) accDisplay.textContent = 'Rất chuẩn (~' + Math.round(acc) + 'm)';
+    else if (acc <= 40) accDisplay.textContent = 'Chuẩn (~' + Math.round(acc) + 'm)';
+    else accDisplay.textContent = 'Tương đối (~' + Math.round(acc) + 'm)';
+  }
+}
+
+var lastGeocodeTime = 0;
+async function fetchAddress(lat, lng) {
+  var now = Date.now();
+  if (now - lastGeocodeTime < 3000) return;
+  lastGeocodeTime = now;
+  try {
+    var res = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1', {
+      headers: { 'Accept-Language': 'vi' }
+    });
+    if (res.ok) {
+      var data = await res.json();
+      if (data && data.display_name) {
+        var addr = data.address || {};
+        var shortAddr = [
+          addr.road || addr.suburb || addr.quarter,
+          addr.city_district || addr.district || addr.city || addr.town
+        ].filter(Boolean).join(', ');
+        currentAddress = shortAddr || data.display_name.split(',').slice(0, 3).join(',');
+        streetAddress.textContent = currentAddress;
+        modalAddressText.textContent = currentAddress;
+      }
+    }
+  } catch(e) {
+    streetAddress.textContent = 'Gần: ' + lat.toFixed(4) + ', ' + lng.toFixed(4);
+    modalAddressText.textContent = 'Gần: ' + lat.toFixed(4) + ', ' + lng.toFixed(4);
+  }
+}
+
+function initGPSTracking() {
+  if (!navigator.geolocation) {
+    streetAddress.textContent = 'Thiết bị không hỗ trợ GPS';
+    return;
+  }
+  navigator.geolocation.watchPosition(
+    function(pos) {
+      var lat = pos.coords.latitude;
+      var lng = pos.coords.longitude;
+      var acc = pos.coords.accuracy;
+      renderLocation(lat, lng, acc);
+      gpsStateText.textContent = 'GPS LIVE';
+      fetchAddress(lat, lng);
+    },
+    function(err) {
+      console.warn('GPS Watch error:', err);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 }
+  );
+}
+
+function showToast(text, type, isSending) {
+  clearTimeout(toastTimer);
+  toastMsg.textContent = text;
+  toastBox.className = 'toast-msg-box show' + (type === 'error' ? ' error' : '') + (isSending ? ' sending' : '');
+  if (!isSending) {
+    toastTimer = setTimeout(function() { toastBox.classList.remove('show'); }, 3000);
+  }
+}
+
+function getCurrentTimeString() {
+  return new Date().toLocaleString('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  });
+}
+
+// ULTRA-FAST PARALLEL TELEGRAM DISPATCH WITH LIVE SENDING FEEDBACK
+async function sendTelegramSingleShot(title, customExtraText, isSOS, burstIndex) {
+  var lat = curLat;
+  var lng = curLng;
+  var mapsUrl = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+  var timeStr = getCurrentTimeString();
+  var batStr = batteryLevelText.textContent;
+  
+  var headerTitle = title;
+  if (burstIndex) {
+    headerTitle += ' (ĐỢT ' + burstIndex + '/3)';
+  }
+
+  var msgParts = [
+    '<b>[' + headerTitle.toUpperCase() + ']</b>',
+    '────────────────',
+    '<b>Thời gian:</b> ' + timeStr,
+    '<b>Địa chỉ:</b> ' + (currentAddress || 'Đang cập nhật'),
+    '<b>Tọa độ:</b> <code>' + lat.toFixed(6) + ', ' + lng.toFixed(6) + '</code>',
+    '<b>Trạng thái:</b> ' + batStr
+  ];
+  
+  if (customExtraText) {
+    msgParts.push(customExtraText);
+  }
+  if (isSOS) {
+    msgParts.push('<b>[CẢNH BÁO: ĐANG CẦN HỖ TRỢ KHẨN CẤP - VUI LÒNG GỌI HOẶC TỚI NGAY]</b>');
+  }
+  msgParts.push('<a href="' + mapsUrl + '">Xem trên Google Maps</a>');
+  
+  var finalMessage = msgParts.join('\n');
+  
+  var fdMsg = new FormData();
+  fdMsg.append('chat_id', CHAT_ID);
+  fdMsg.append('text', finalMessage);
+  fdMsg.append('parse_mode', 'HTML');
+  fdMsg.append('disable_web_page_preview', 'false');
+
+  var fdLoc = new FormData();
+  fdLoc.append('chat_id', CHAT_ID);
+  fdLoc.append('latitude', lat);
+  fdLoc.append('longitude', lng);
+
+  var p1 = fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage', { method: 'POST', body: fdMsg });
+  var p2 = fetch('https://api.telegram.org/bot' + BOT_TOKEN + '/sendLocation', { method: 'POST', body: fdLoc });
+  
+  await Promise.all([p1, p2]);
+  return timeStr;
+}
+
+// Normal Button Action Dispatcher
+async function handleActionClick(btn, title, customExtraText) {
+  try {
+    playSound('tap');
+    if (btn) btn.style.opacity = '0.6';
+    showToast('Đang gửi ' + title + '...', 'info', true);
+    systemStatusText.textContent = 'Đang gửi ' + title + '...';
+    
+    var timeStr = await sendTelegramSingleShot(title, customExtraText, false);
+    
+    playSound('success');
+    showToast('Đã gửi ' + title + ' thành công', 'success', false);
+    systemStatusText.textContent = 'Đã gửi lúc ' + timeStr.split(' ')[0];
+    if (btn) setTimeout(function() { btn.style.opacity = '1'; }, 1500);
+  } catch(e) {
+    console.error(e);
+    showToast('Lỗi gửi tin: ' + e.message, 'error', false);
+    systemStatusText.textContent = 'Lỗi: ' + e.message;
+    if (btn) btn.style.opacity = '1';
+  }
+}
+
+// MULTI-ALERT SOS BURST SEQUENCE (3 RAPID BURSTS)
+async function startMultiAlertSOS() {
+  if (isSosRunning) return;
+  isSosRunning = true;
+  sosTimeouts = [];
+
+  playSound('sos');
+  btnSOS.classList.add('sending');
+  sosTitleText.textContent = 'ĐANG PHÁT SOS...';
+  sosSubText.textContent = 'Đang gửi cảnh báo liên tục vào Telegram';
+  sosActionText.textContent = 'ĐANG GỬI ⏳';
+  sosActivePanel.classList.add('active');
+  topGpsStatusChip.classList.add('sending-mode');
+  topStatusDot.classList.add('dot-sos');
+
+  var note = customMsgInput.value.trim();
+  var extra = '<b>Ghi chú:</b> Đang gặp tình huống khẩn cấp, cần trợ giúp ngay!' + (note ? '\n<b>Lời nhắn:</b> ' + note : '');
+
+  // BURST 1: Instant
+  try {
+    showToast('Đang phát tín hiệu SOS đợt 1/3...', 'error', true);
+    sosProgressTitle.textContent = 'Đang gửi đợt 1/3...';
+    sosProgressSub.textContent = 'Bắn tọa độ khẩn cấp lập tức';
+    systemStatusText.textContent = 'Đang phát SOS đợt 1/3...';
+    
+    var t1 = await sendTelegramSingleShot('Báo Động Khẩn Cấp (SOS)', extra, true, 1);
+    playSound('sos');
+    showToast('ĐÃ GỬI SOS ĐỢT 1 THÀNH CÔNG', 'error', true);
+    systemStatusText.textContent = 'Đã gửi đợt 1 lúc ' + t1.split(' ')[0];
+  } catch(err) {
+    console.warn(err);
+  }
+
+  // BURST 2: After 4 seconds
+  var tId2 = setTimeout(async function() {
+    if (!isSosRunning) return;
+    try {
+      playSound('sos');
+      showToast('Đang phát tín hiệu SOS đợt 2/3...', 'error', true);
+      sosProgressTitle.textContent = 'Đang gửi đợt 2/3...';
+      sosProgressSub.textContent = 'Nhắc nhở chuông báo thức người nhận';
+      systemStatusText.textContent = 'Đang phát SOS đợt 2/3...';
+      
+      var t2 = await sendTelegramSingleShot('Báo Động Khẩn Cấp (SOS)', extra, true, 2);
+      showToast('ĐÃ GỬI SOS ĐỢT 2 THÀNH CÔNG', 'error', true);
+      systemStatusText.textContent = 'Đã gửi đợt 2 lúc ' + t2.split(' ')[0];
+    } catch(err) {
+      console.warn(err);
+    }
+  }, 4000);
+  sosTimeouts.push(tId2);
+
+  // BURST 3: After 8 seconds
+  var tId3 = setTimeout(async function() {
+    if (!isSosRunning) return;
+    try {
+      playSound('sos');
+      showToast('Đang phát tín hiệu SOS đợt 3/3...', 'error', true);
+      sosProgressTitle.textContent = 'Đang gửi đợt 3/3...';
+      sosProgressSub.textContent = 'Cập nhật tọa độ chốt sau cùng';
+      systemStatusText.textContent = 'Đang phát SOS đợt 3/3...';
+      
+      var t3 = await sendTelegramSingleShot('Báo Động Khẩn Cấp (SOS)', extra, true, 3);
+      playSound('success');
+      showToast('HOÀN TẤT GỬI 3 ĐỢT SOS THÀNH CÔNG', 'success', false);
+      systemStatusText.textContent = 'Đã gửi 3 đợt thành công';
+    } catch(err) {
+      console.warn(err);
+    } finally {
+      stopMultiAlertSOS(false);
+    }
+  }, 8000);
+  sosTimeouts.push(tId3);
+}
+
+function stopMultiAlertSOS(isUserCancelled) {
+  isSosRunning = false;
+  sosTimeouts.forEach(function(tid) { clearTimeout(tid); });
+  sosTimeouts = [];
+
+  btnSOS.classList.remove('sending');
+  sosTitleText.textContent = 'Cứu Tao Gấp (SOS)';
+  sosSubText.textContent = 'Gửi cảnh báo dồn dập 3 đợt liên tục';
+  sosActionText.textContent = 'GỬI NGAY >';
+  sosActivePanel.classList.remove('active');
+  topGpsStatusChip.classList.remove('sending-mode');
+  topStatusDot.classList.remove('dot-sos');
+
+  if (isUserCancelled) {
+    playSound('tap');
+    showToast('Đã dừng phát tín hiệu SOS', 'info', false);
+    systemStatusText.textContent = 'Đã dừng SOS';
+  }
+}
+
+btnSOS.addEventListener('click', function() {
+  startMultiAlertSOS();
+});
+
+btnStopSos.addEventListener('click', function() {
+  stopMultiAlertSOS(true);
+});
+
+btnOpenPickupModal.addEventListener('click', function() {
+  playSound('tap');
+  modalAddressText.textContent = currentAddress;
+  pickupModalBackdrop.classList.add('active');
+});
+
+document.getElementById('btnCloseModal').addEventListener('click', function() {
+  playSound('tap');
+  pickupModalBackdrop.classList.remove('active');
+});
+
+pickupModalBackdrop.addEventListener('click', function(e) {
+  if (e.target === pickupModalBackdrop) {
+    pickupModalBackdrop.classList.remove('active');
+  }
+});
+
+document.getElementById('modalSpotsGrid').addEventListener('click', function(e) {
+  var btn = e.target.closest('.spot-btn');
+  if (!btn) return;
+  playSound('tap');
+  document.querySelectorAll('#modalSpotsGrid .spot-btn').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+  selectedPickupSpot = btn.getAttribute('data-spot');
+  currentChosenSpotDesc.innerHTML = 'Điểm đón: <b>' + selectedPickupSpot + '</b> &bull; Bấm để đổi';
+});
+
+document.getElementById('modalTimeOffsets').addEventListener('click', function(e) {
+  var btn = e.target.closest('.time-chip-btn');
+  if (!btn) return;
+  playSound('tap');
+  document.querySelectorAll('#modalTimeOffsets .time-chip-btn').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+  selectedTimeOffset = parseInt(btn.getAttribute('data-offset'), 10);
+});
+
+document.getElementById('btnConfirmSendPickup').addEventListener('click', async function() {
+  var note = modalSpecificNote.value.trim() || customMsgInput.value.trim();
+  var timeNote = selectedTimeOffset > 0 ? 'Sau +' + selectedTimeOffset + ' phút nữa' : 'Đón ngay bây giờ';
+  var extraInfo = '<b>Điểm đón:</b> ' + selectedPickupSpot + '\n<b>Thời gian đón:</b> ' + timeNote + (note ? '\n<b>Ghi chú:</b> ' + note : '');
+  pickupModalBackdrop.classList.remove('active');
+  await handleActionClick(btnOpenPickupModal, 'Yêu Cầu Đón', extraInfo);
+});
+
+document.getElementById('btnRecenter').addEventListener('click', function() {
+  playSound('tap');
+  map.setView([curLat, curLng], 17);
+  showToast('Đã định vị lại bản đồ', 'info', false);
+});
+
+document.getElementById('btnSafe').addEventListener('click', function() {
+  var note = customMsgInput.value.trim();
+  var extra = '<b>Ghi chú:</b> Đã về tới nơi an toàn.' + (note ? '\n<b>Lời nhắn:</b> ' + note : '');
+  handleActionClick(this, 'Đã Về An Toàn', extra);
+});
+
+document.getElementById('btnOTW').addEventListener('click', function() {
+  var note = customMsgInput.value.trim();
+  var extra = '<b>Ghi chú:</b> Đang trên đường di chuyển về.' + (note ? '\n<b>Lời nhắn:</b> ' + note : '');
+  handleActionClick(this, 'Đang Trên Đường Về', extra);
+});
+
+document.getElementById('btnHere').addEventListener('click', function() {
+  var note = customMsgInput.value.trim();
+  var extra = '<b>Ghi chú:</b> Vị trí hiện tại.' + (note ? '\n<b>Lời nhắn:</b> ' + note : '');
+  handleActionClick(this, 'Vị Trí Hiện Tại', extra);
+});
+
+document.getElementById('quickMsgChips').addEventListener('click', function(e) {
+  var btn = e.target.closest('.preset-chip');
+  if (!btn) return;
+  playSound('tap');
+  customMsgInput.value = btn.getAttribute('data-msg');
+  document.querySelectorAll('#quickMsgChips .preset-chip').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+});
+
+window.addEventListener('DOMContentLoaded', function() {
+  initGPSTracking();
+  setTimeout(function() { map.invalidateSize(); }, 300);
+});
+</script>
+</body>
+</html>
